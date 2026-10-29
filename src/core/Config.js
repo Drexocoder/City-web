@@ -24,7 +24,10 @@ export class Config {
     this.seed = int(p.get('seed'), 1337);
     this.time = float(p.get('time'), 14.0);
     this.cam = p.get('cam') || 'city';
-    this.quality = QUALITY[p.get('quality')] ? p.get('quality') : 'high';
+    // Start at Medium instead of High: the first boot generates terrain, vegetation and post-processing
+    // resources before the user can play. Players can still select High/Ultra explicitly.
+    const requestedQuality = p.get('quality');
+    this.quality = QUALITY[requestedQuality] ? requestedQuality : 'medium';
     this.paused = p.get('paused') === '1';
     this.focus = p.get('focus') ? p.get('focus').split(',').map((s) => s.trim()).filter(Boolean) : null;
     this.weather = p.get('weather') || 'clear';
