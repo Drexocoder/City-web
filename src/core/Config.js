@@ -28,6 +28,7 @@ export class Config {
     // resources before the user can play. Players can still select High/Ultra explicitly.
     const requestedQuality = p.get('quality');
     this.quality = QUALITY[requestedQuality] ? requestedQuality : 'medium';
+    // An explicit query parameter always wins; this is only the first-run default.
     this.paused = p.get('paused') === '1';
     this.focus = p.get('focus') ? p.get('focus').split(',').map((s) => s.trim()).filter(Boolean) : null;
     this.weather = p.get('weather') || 'clear';
