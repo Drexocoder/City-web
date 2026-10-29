@@ -66,7 +66,7 @@ export function showStartScreen(ctx, opts = {}) {
 
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const restored = readStore();
-  const currentQuality = config.quality || 'high';
+  const currentQuality = config.quality || 'medium';
   const seed0 = clampSeed(restored && Number.isFinite(restored.seed) ? restored.seed : config.seed);
   const name0 = (restored && restored.cityName) || '';
 
@@ -232,7 +232,7 @@ function bootVisuals(seed, reduced) {
     if (!root) return;
     source = src;
     paintSeedMap();
-    const tier = (window.innerWidth * window.innerHeight) < 620000 || (navigator.hardwareConcurrency || 8) <= 4 ? 'low' : 'high';
+    const tier = (window.innerWidth * window.innerHeight) < 620000 || (navigator.hardwareConcurrency || 8) <= 6 ? 'low' : 'medium';
     try {
       const { Backdrop } = await import('./Backdrop.js');
       if (!root) return;
