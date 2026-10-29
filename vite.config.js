@@ -10,6 +10,20 @@ export default defineConfig({
     strictPort: true,
     hmr: { overlay: false },
   },
-  build: { target: 'esnext', sourcemap: false, chunkSizeWarningLimit: 4000 },
+  build: {
+    target: 'esnext',
+    sourcemap: false,
+    // Let browsers fetch the app shell quickly and load modules on demand.
+    modulePreload: { polyfill: false },
+    chunkSizeWarningLimit: 4000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (id.includes('/three/')) return 'three-core';
+        },
+      },
+    },
+  },
   assetsInclude: ['**/*.hdr', '**/*.exr', '**/*.glb', '**/*.gltf', '**/*.ktx2', '**/*.bin'],
 });
