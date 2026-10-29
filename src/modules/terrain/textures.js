@@ -20,10 +20,62 @@ export const LAYERS = [
   { name: 'forestfloor', dir: 'forest_floor', scale: 4.0 },
 ];
 
-const loadImage = (url) => new Promise((resolve, reject) => {
+// Never let a stalled texture request freeze the entire terrain initialisation.
+// Good source textures are used immediately; a small procedural fallback keeps the game bootable
+// on slow connections or when a hosted texture is missing.
+function fallbackImage(url) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const g = c.getContext('2d');
+  const lower = url.toLowerCase();
+  if (lower.includes('normal')) {
+    g.fillStyle = 'rgb(128,128,255)';
+    g.fillRect(0, 0, 64, 64);
+  } else {
+    const isAO = lower.includes('/ao.');
+    const isRough = lower.includes('roughness');
+    const palette = isAO ? [235, 235, 235] : isRough ? [190, 190, 190]
+      : lower.includes('rock') ? [112, 108, 101]
+      : lower.includes('sand') ? [183, 163, 119]
+      : lower.includes('mud') || lower.includes('ground') ? [112, 96, 74]
+      : [91, 111, 69];
+    const image = g.createImageData(64, 64);
+    let seed = 0;
+    for (let i = 0; i < url.length; i++) seed = (seed * 31 + url.charCodeAt(i)) >>> 0;
+    for (let i = 0; i < image.data.length; i += 4) {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      const noise = isAO || isRough ? ((seed >>> 24) % 15) - 7 : ((seed >>> 24) % 31) - 15;
+      image.data[i] = Math.max(0, Math.min(255, palette[0] + noise));
+      image.data[i + 1] = Math.max(0, Math.min(255, palette[1] + noise));
+      image.data[i + 2] = Math.max(0, Math.min(255, palette[2] + noise));
+      image.data[i + 3] = 255;
+    }
+    g.putImageData(image, 0, 0);
+  }
+  return c;
+}
+
+const loadImage = (url) => new Promise((resolve) => {
   const img = new Image();
-  img.onload = () => resolve(img);
-  img.onerror = () => reject(new Error('image failed ' + url));
+  let settled = false;
+  const finish = (source) => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timeout);
+    img.onload = null;
+    img.onerror = null;
+    resolve(source);
+  };
+  const timeout = setTimeout(() => {
+    console.warn('[terrain] texture timed out; using fallback:', url);
+    finish(fallbackImage(url));
+    img.src = '';
+  }, 8000);
+  img.onload = () => finish(img);
+  img.onerror = () => {
+    console.warn('[terrain] texture unavailable; using fallback:', url);
+    finish(fallbackImage(url));
+  };
   img.src = url;
 });
 
